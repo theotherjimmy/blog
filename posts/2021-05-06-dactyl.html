@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="/css/gruvbox-dark.css">
+        <link rel="stylesheet" href="/css/hack.css">
+        <meta charset="utf-8">
+        <title>Dactyl Build Log</title>
+    </head>
+    <body class="gruvbox-dark hack">
+    <div class="container">
+      <h1>Dactyl Build Log</h2>
+      <p>After a while with typing on a goldtouch, I bought a Kinesis Advantage as
+I missed having thumb keys and typing on my M-x Butterfly is an unmitigated
+ergonomic disaster.</p>
+<p>Some time in 2018, I found out about the Dactyl project, an improvement over
+the Kinesis Advantage in a few ways, and decided to build one.</p>
+<p>This keyboard would require the use of 3D printing and, luckily, my work had 
+recently purchased some 3D printers, a few Form Labs 2, that the mere employees
+could use.
+So, before I had purchased key switches or MCUs I asked to have the top part of
+a Dactyl printed.
+Since it would take such a long time, It was scheduled for a pair of weekends.</p>
+<p>Before the printing got started, I dived into the wild world of key switches and
+key caps.
+After having typed on both Cherry MX Clears and Browns, I was looking for 
+something that was not as heavy, that is required less activation force, than
+a clear, and had a larger tactile bump than browns.
+I eventually settled on Khail Box Browns, which have a further advantage that
+they were more stable and would not wiggle much at the top of the key travel.
+Having tried the DSA caps for my M-x Butterfly, I had found them to be slightly
+too narrow at the top, creating a frequent feeling of hitting keys on their
+side.
+To mitigate this issue, I selected SA key caps as they have a wider top.</p>
+<p>I selected the
+<a href="https://os.mbed.com/platforms/MAX32625PICO/">Maxim MAX32625pico</a>, as It was
+one of the few MCUs that both had Mbed OS support and was in theory small 
+enough to fit into the case.
+I wanted Mbed OS support, as I was employed to work on Mbed OS professionally
+at the time, and thought this project would be a good chance to dog-food.</p>
+<p>After the prints were done and I had spent hours cutting all of the rafts off
+of the bottom of the print with flush cutters, I set out to solder the matrix.</p>
+<p>This time, the MCU boards low pin count required that I solder the matrix as
+6 rows by 6 columns.
+With those 12 pins taken up by the matrix, and the 2 pins needed for serial
+communication with the other half of the keyboard, I had allocated all 14 IO 
+pins on the development board.</p>
+<p>Soldering this keyboard took quite a bit longer than the M-x Butterfly, as it
+had nearly twice as many keys, having 70 instead of the minimalist 42 of the
+M-x butterfly.
+Further, I tried to solder this one with as low a profile as I could, as then
+backing panel was reportedly a very snug fit, and any extra space taken up by
+wiring would make it difficult to install.</p>
+<p>Again, I produced a custom keyboard firmware which is hosted on github as 
+<a href="https://github.com/theotherjimmy/max-keyboard">my max-keyboard repo</a>.
+This time, I decided that I would not need any layering, as the keyboard would
+have plenty of keys, 2 more than the Kinesis Advantage I was accustomed to and
+typed on without layers.
+This saved me some implementation time, though my second time through writing 
+keyboard firmware went quicker than the first, bringing the process down
+to no more than a week.</p>
+<p>This time through writing the firmware, I used C++, though I wrote in a style
+that was more reminiscent of C.
+This firmware, while it worked, would occasionally be behind by a few frames,
+and consumed much more flash than was truly needed.
+I attribute both of these to the fact that, at the time of writing, it was
+difficult to use Mbed OS without its RTX RTOS.
+Further, the USB stack that I was using, or forced to use by lack of 
+alternatives, required a specific version of Mbed OS that does not support 
+compiling without the RTOS (A feature that would later consume most of my time
+for 3 months), and I did not feel like back-porting the RTOS-less support for
+something as trivial as reducing my flash size.
+I decided that it was not worth fixing, that the flash size was merely an 
+aesthetic issue, and that the rare delays were something that I would get
+used to with time.</p>
+<p>Further aesthetic issues with that the firmware exhibited included that 
+the left and right half of the keyboard were switched with conditional 
+compilation within main and that the keyboard layout was in raw hex bytes.
+These did not bother me much as once the firmware worked well enough I stopped.</p>
+<p>I then constructed a stand for this keyboard out of K'Nex, which worked well
+enough.
+If you bumped the keyboard, sometimes it would fall slightly off the stand,
+causing me to have to adjust it.
+The stand had a modest tent to it, at most 15 degrees.</p>
+<p>Typing on my new dactyl keyboard was easier compared to my Kinesis Advantage.
+The furthest rows from the home row were closer, and the bowl of the thumb keys
+made them easier to reach as well.</p>
+<p>I typed on this keyboard for 2 years, keeping it at the office in which I 
+worked on a stand of K'Nex.
+It started many conversations with coworkers and earned me, or my cubicle
+really, some amount of fame.
+It had developed a bit of a stutter in a few of the keys, strangely in keys
+that I typed rarely.
+Once the world went into lock down from Covid-19, I grabbed this keyboard from
+the office.</p>
+<p>Working from home, I attempted to recreate the experience I with this Dactyl
+in the office.
+However, at home I had a keyboard tray that kept knocking the Dactyl off of the
+stand and the stutter worsened.</p>
+<p>I then resolved to correct the stutter with a firmware revision.
+However, after a few minutes I gave up, as I did not like working with the
+tools I had developed for so long (more on that probably never).</p>
+<p>So I swapped the Kinesis Advantage back into use, retiring the Dactyl to the 
+closet, in the hopes that one day I would rewrite the firmware in a way that I
+would have more fun developing.</p>
+
+    </div>
+  </body>
+</html>
