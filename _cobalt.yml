@@ -1,7 +1,8 @@
-
 site:
   title: theotherjimmy's blog
   description: Blog Posts Go Here
   base_url: http://theotherjimmy.github.io
 posts:
   rss: rss.xml
+ignore:
+  - "shell.nix"
