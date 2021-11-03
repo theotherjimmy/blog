@@ -1,0 +1,5 @@
+syntax_theme = "base16-ocean.dark"
+content_path = "site"
+output_path  = "out"
+base_file    = "index.md"
+header_file  = "header.md"

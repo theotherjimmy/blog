@@ -1,0 +1,3 @@
+[submodule "cuddly_kangaroo"]
+	path = cuddly_kangaroo
+	url = git@github.com:gamozolabs/cuddly_kangaroo.git
