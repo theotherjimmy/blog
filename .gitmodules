@@ -3,3 +3,6 @@
 	url = git@github.com:gamozolabs/cuddly_kangaroo.git
 [submodule "cuddly_kangaroo/"]
 	url = https://github.com/theotherjimmy/cuddly_kangaroo
+[submodule "ghp-rs"]
+	path = ghp-rs
+	url = https://github.com/theotherjimmy/ghp-rs

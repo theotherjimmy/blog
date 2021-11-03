@@ -7,4 +7,7 @@ serve: render
 
 watch:
     fd | entr -nr -- just serve
-    
+
+release: render
+    env -C ghp-rs cargo build --release \
+    && ghp-rs/target/release/ghp out
