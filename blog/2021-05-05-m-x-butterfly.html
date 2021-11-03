@@ -1,15 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
     <head>
-        <link rel="stylesheet" href="/blog/css/gruvbox-dark.css">
-        <link rel="stylesheet" href="/blog/css/hack.css">
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <title>M-x Butterfly Build Log</title>
+        <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA+Pj4AP+ZmQCZmf8A/zOZACkpKQCZADMA/zaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABVVVVVAAAABTERERNQAABTEVEVETUAAFMVURVRNQAFZTUzM1NWUFZmVVVVVWZlVmRmZmZmRmVWREImYiREZVZEQiIiJEdlVkQmYiZiRGVWZCZiJmJGZQVkImImIkZQBWZCIiIkZlAAVmQiIkZlAAAFVmZmZVAAAAAFVVVQAADwDwAA4AcAAMADAADAAwAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAACAAQAAwAMAAOAHAAD4HwAA" />
+        <meta name="description" content="A good blog">
+        <meta property="og:title" content="M-x Butterfly Build Log" />
+        <meta property="og:description" content="A good blog" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:url" content="http://gamozolabs.com/blog/" />
+        <meta property="og:image" content="http://gamozolabs.com/moose.png" />
+        <style>
+body {
+    font-family: Serif;
+    font-size: 18px;
+    margin: 0;
+    background-color: #2e3440;
+    color: #d8dee9;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+a:link {
+    color: #81a1c1;
+}
+
+a:visited {
+    color: #b48aed;
+}
+
+a:hover {
+    background-color: #3b4252;
+}
+
+pre {
+    overflow: auto;
+}
+
+main#content {
+    margin: auto;
+    padding-left: 2em;
+    padding-right: 2em;
+    max-width: 60em;
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.navbar li {
+    float: left;
+}
+
+.navbar li a {
+    display: block;
+    text-align: center;
+    padding: 0.5em 0.5em;
+    text-decoration: none;
+}
+
+.flex-break {
+  flex-basis: 100%;
+  height: 0;
+  display: none;
+}
+
+.list-posts .list-title {
+  text-align: center;
+}
+.list-posts .posts-year {
+  margin-top: 70px;
+}
+.list-posts .post-title {
+  margin: 18px 0 0 15px;
+}
+.list-posts a {
+  text-decoration: none;
+}
+.post-title .post-link,
+.post-title .post-date {
+  display: inline-block;
+}
+.post-title .post-link {
+  width: 80%;
+}
+.tags-list .post-tags {
+  margin-top: 50px;
+}
+.tags-list .post-tags .post-tag {
+  margin: 2px 5px;
+  padding: 0;
+}
+.tags-list .post-tags .post-tag a {
+  border-radius: inherit;
+  padding: 0;
+}
+.tags-list .post-tags .post-tag a div {
+  display: inline-block;
+}
+.tags-list .post-tags .post-tag a .tag-name {
+  padding: 5px 8px;
+}
+.tags-list .post-tags .post-tag a .tag-posts-count {
+  background-color: var(--light-secondary-color);
+  border-radius: inherit;
+  color: inherit;
+  opacity: 0.8;
+  padding: 6px;
+  position: relative;
+  z-index: 0;
+}
+.tags-list .post-tags .post-tag:hover a .tag-posts-count {
+  background-color: var(--light-text-color);
+  color: rgb(var(--light-primary-color));
+}
+
+        </style>
     </head>
-    <body class="gruvbox-dark hack">
-    <div class="container">
-      <h1>M-x Butterfly Build Log</h2>
-      <p>Once, shortly after college, I built a keyboard.</p>
+    <body>
+        <header>
+<nav class="navbar" role="navigation"><ul><li><a href="/index.html">Blog</a></li>
+<li style="float:right"><a href="https://github.com/theotherjimmy"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItZ2l0aHViIj48cGF0aCBkPSJNOSAxOWMtNSAxLjUtNS0yLjUtNy0zbTE0IDZ2LTMuODdhMy4zNyAzLjM3IDAgMCAwLS45NC0yLjYxYzMuMTQtLjM1IDYuNDQtMS41NCA2LjQ0LTdBNS40NCA1LjQ0IDAgMCAwIDIwIDQuNzcgNS4wNyA1LjA3IDAgMCAwIDE5LjkxIDFTMTguNzMuNjUgMTYgMi40OGExMy4zOCAxMy4zOCAwIDAgMC03IDBDNi4yNy42NSA1LjA5IDEgNS4wOSAxQTUuMDcgNS4wNyAwIDAgMCA1IDQuNzdhNS40NCA1LjQ0IDAgMCAwLTEuNSAzLjc4YzAgNS40MiAzLjMgNi42MSA2LjQ0IDdBMy4zNyAzLjM3IDAgMCAwIDkgMTguMTNWMjIiPjwvcGF0aD48L3N2Zz4=" /></a></li>
+</nav>
+        </header>
+        <main id="content">
+<p>Once, shortly after college, I built a keyboard.</p>
 <p>I designed this keyboard myself, using a tool called 
 <a href="https://implicitcad.org">ImplicitCad</a>, for manufacture on a laser cutter.
 I used a laser cutter because I had access to it, as part of the newly created
@@ -92,6 +212,6 @@ This made typing numbers difficult, and symbols a hand-straining 3-key chord.</p
 <p>So I bought a goldtouch split keyboard on ebay for a reasonable price and typed
 on it for a while.</p>
 
-    </div>
-  </body>
+        </main>
+    </body>
 </html>
