@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <title>Notes from a bug</title>
+        <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA+Pj4AP+ZmQCZmf8A/zOZACkpKQCZADMA/zaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABVVVVVAAAABTERERNQAABTEVEVETUAAFMVURVRNQAFZTUzM1NWUFZmVVVVVWZlVmRmZmZmRmVWREImYiREZVZEQiIiJEdlVkQmYiZiRGVWZCZiJmJGZQVkImImIkZQBWZCIiIkZlAAVmQiIkZlAAAFVmZmZVAAAAAFVVVQAADwDwAA4AcAAMADAADAAwAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAACAAQAAwAMAAOAHAAD4HwAA" />
+        <meta name="description" content="A good blog">
+        <meta property="og:title" content="Notes from a bug" />
+        <meta property="og:description" content="A good blog" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:url" content="http://gamozolabs.com/blog/" />
+        <meta property="og:image" content="http://gamozolabs.com/moose.png" />
+        <style>
+body {
+    font-family: Serif;
+    font-size: 18px;
+    margin: 0;
+    background-color: #2e3440;
+    color: #d8dee9;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+a:link {
+    color: #81a1c1;
+}
+
+a:visited {
+    color: #b48aed;
+}
+
+a:hover {
+    background-color: #3b4252;
+}
+
+pre {
+    overflow: auto;
+}
+
+main#content {
+    margin: auto;
+    padding-left: 2em;
+    padding-right: 2em;
+    max-width: 60em;
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.navbar li {
+    float: left;
+}
+
+.navbar li a {
+    display: block;
+    text-align: center;
+    padding: 0.5em 0.5em;
+    text-decoration: none;
+}
+
+.flex-break {
+  flex-basis: 100%;
+  height: 0;
+  display: none;
+}
+
+.list-posts .list-title {
+  text-align: center;
+}
+.list-posts .posts-year {
+  margin-top: 70px;
+}
+.list-posts .post-title {
+  margin: 18px 0 0 15px;
+}
+.list-posts a {
+  text-decoration: none;
+}
+.post-title .post-link,
+.post-title .post-date {
+  display: inline-block;
+}
+.post-title .post-link {
+  width: 80%;
+}
+.tags-list .post-tags {
+  margin-top: 50px;
+}
+.tags-list .post-tags .post-tag {
+  margin: 2px 5px;
+  padding: 0;
+}
+.tags-list .post-tags .post-tag a {
+  border-radius: inherit;
+  padding: 0;
+}
+.tags-list .post-tags .post-tag a div {
+  display: inline-block;
+}
+.tags-list .post-tags .post-tag a .tag-name {
+  padding: 5px 8px;
+}
+.tags-list .post-tags .post-tag a .tag-posts-count {
+  background-color: var(--light-secondary-color);
+  border-radius: inherit;
+  color: inherit;
+  opacity: 0.8;
+  padding: 6px;
+  position: relative;
+  z-index: 0;
+}
+.tags-list .post-tags .post-tag:hover a .tag-posts-count {
+  background-color: var(--light-text-color);
+  color: rgb(var(--light-primary-color));
+}
+
+        </style>
+    </head>
+    <body>
+        <header>
+<nav class="navbar" role="navigation"><ul><li><a href="/blog/index.html">Blog</a></li>
+<li style="float:right"><a href="https://github.com/theotherjimmy"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItZ2l0aHViIj48cGF0aCBkPSJNOSAxOWMtNSAxLjUtNS0yLjUtNy0zbTE0IDZ2LTMuODdhMy4zNyAzLjM3IDAgMCAwLS45NC0yLjYxYzMuMTQtLjM1IDYuNDQtMS41NCA2LjQ0LTdBNS40NCA1LjQ0IDAgMCAwIDIwIDQuNzcgNS4wNyA1LjA3IDAgMCAwIDE5LjkxIDFTMTguNzMuNjUgMTYgMi40OGExMy4zOCAxMy4zOCAwIDAgMC03IDBDNi4yNy42NSA1LjA5IDEgNS4wOSAxQTUuMDcgNS4wNyAwIDAgMCA1IDQuNzdhNS40NCA1LjQ0IDAgMCAwLTEuNSAzLjc4YzAgNS40MiAzLjMgNi42MSA2LjQ0IDdBMy4zNyAzLjM3IDAgMCAwIDkgMTguMTNWMjIiPjwvcGF0aD48L3N2Zz4=" /></a></li>
+</nav>
+        </header>
+        <main id="content">
+        <h1>Notes from a bug</h1>
+<p>This is my edited notes that confirmed a decode bug that I stubled on while
+doing some work for a Cortex-M55 port of Zephyr. 
+In particular, the bug dealt with printing a double float &quot;1.0&quot; as &quot;6.25...&quot;,
+which is a tad baffling.</p>
+<p>I debugged this by stepping trough the code in gdb, and mentally doing some
+checking of the dissasembly, whith the corresponding C open in another window.</p>
+<p>This is edited to include more context and commentary where I feelt it is
+needed.</p>
+<blockquote>
+<p>Original notes will be indented like this</p>
+</blockquote>
+<p>Comentary is written as normal text, and some of the headings are from the
+original notes.</p>
+<h1>Background</h1>
+<p>I was working with a bug that affected the <code>%f</code> and related float formatting
+code.
+An interesting property of this code, in Zephyr, is that it does all of this
+formatting without using the FPU.
+I think it avoids the FPU, as it's possible to run this code, and format floats,
+from within the kernel, where FPU use is banned by convention.</p>
+<blockquote>
+<p>For reference, the IEEE 754-2008 double precision floating point format:</p>
+</blockquote>
+<blockquote>
+<pre><code class="language-text">bit #
+63_62_________51___________________________________________________0
+ | |          |       Fractional part (52 bits)                    |
+  - ---------- ----------------------------------------------------
+  ^     ^
+  |     |
+  |     +- Exponent part (11 bits)
+  |
+  +- Sign bit
+</code></pre>
+</blockquote>
+<p>I drew this diagram in my notes as I was having trouble keeping track of the
+bit positions of all of the various parts of the float in my head.
+Refering to this diagram whil reading the C really helped me understand it.</p>
+<h1>Register history</h1>
+<p>When stepping through the code for 1.0, I found that the bit patter was quite
+recognisable: 0x3ff_0000_0000_0000, which has a fraction of 0 and an exponent
+of 1023.
+This was helpful in identifying the bug, as the fractional part was all 0's.
+Since the fractional part was most important in the printing routine, I traced
+it's contents with gdb's <code>display</code> command.</p>
+<p>This lead me to some strange behavior, which I noted below.</p>
+<h2>Before 0x100019b0</h2>
+<blockquote>
+<p>R2, Lower bits of float, containing only fractional part</p>
+</blockquote>
+<blockquote>
+<p>R3, higher bits containing fractional, exponent and sign parts</p>
+</blockquote>
+<h2>After 0x100019b0</h2>
+<blockquote>
+<p>R6, Lower bits of float, containing only fractional part</p>
+</blockquote>
+<blockquote>
+<p>R1, higher bits containing fractional, exponent and sign parts</p>
+</blockquote>
+<h1>An unusal instruction</h1>
+<p>Shortly after tracking where the binary is storing the float it's printing,
+I noticed that there was an instruction that was doing something strange with
+the fractional part:</p>
+<blockquote>
+<p><code>100019b4:       ea52 23cf       orrs.w  r3, r2, pc, lsl #11</code></p>
+</blockquote>
+<blockquote>
+<p><code>R3 &lt;- R2 | (PC &lt;&lt; 11)</code></p>
+</blockquote>
+<blockquote>
+<p>Which for some reason includes the PC !? 
+This is a very weird thing to or into the fractional part?
+This seems to be a red herring, or at least not the most
+pressing issue, as clearing fract (backed by R3), does not
+resolve the issue.</p>
+</blockquote>
+<p>This was not a red herring</p>
+<h2>Another example:</h2>
+<p>Shortly after I had noticed the weird disassembly, I noticed another instance
+where PC was included as a source register of an OR instruction.</p>
+<blockquote>
+<pre><code>(gdb) x/2ht 0x10001dc6
+0x10001dc6 &lt;cbvprintf+2542&gt;:    1110101001010010        0000001101011111
+(gdb) x/1i 0x10001dc6
+0x10001dc6 &lt;cbvprintf+2542&gt;: orrs.w  r3, r2, pc, lsr #1
+</code></pre>
+</blockquote>
+<h2>Confirming the Disassembly</h2>
+<p>Since this was affecting more than one instruction, and I was debugging why the
+divide by 10 routine (called <code>_ldiv10</code>) was not dividing by ten, and messing
+with the rounding needed to print, I decided that the best path forward was
+checking this instruction.</p>
+<p>Note, that I had orininally tried to do this decode with the gdb output of both</p>
+<pre><code>(gdb) x/4bt 0x10001dc6
+(gdb) x/1wt 0x10001dc6
+</code></pre>
+<p>which stands for eXamine memory /(as) 4 Bytes (t)in binary at... and
+eXamine memory /(as) 1 Word (t)in binary at...
+but these did not match the manual used in aid of this decode.
+Turns out arm T2 style instructions are decoded as middle endian, specifically
+byte order 1032.
+I did not know that before embarking on this journey</p>
+<blockquote>
+<p>Breaknig it up to make it easier to read</p>
+<pre><code>1110101001010010        0000001101011111
+|      | \      \      /      / |      |
+|      |  \      \    /      /  |      |
+11101010   01010010  00000011   01011111
+| ||--| Data Processing (Shifter Register) see. C2.3.3
+|-| Is T2
+11101010   01010010  00000011   01011111
+       |     |||--| Rn = 0010
+       |     || S bit = 1
+       |-----| op0 of section 2.3.3 = 0010, Wide shift, etc. C2.3.3.1
+11101010   01010010  00000011   01011111
+                     | |||-| op2 = 001
+                     | || op1 = 0
+                     | op0 of section 2.3.3.1 = 0
+11101010   01010010  00000011   01011111
+                                  |||--| op4 = 1111
+                                  || op3 = 01
+
+</code></pre>
+<p>an abreviated version of the table from section 2.3.3.1</p>
+</blockquote>
+<blockquote>
+<pre><code>|  Rn  | S | op0 | op1 | op2 | op3 |  op4  | opcode |
+-----------------------------------------------------
+|!=1111| 1 |  0  |  -  |  -  |  -  |!=11x1 | orrs   |
+| xxx0 | 1 |  0  |  -  |!=111|  01 |  1111 | lsrl   |
+</code></pre>
+</blockquote>
+<blockquote>
+<p>So, uh, I dissagree with gdb (!?), and I think it's lsrl</p>
+</blockquote>
+<p>This is where I start to question the tools I'm working with.
+Specifically if they know about the lsrl instruction.</p>
+<blockquote>
+<p>Which, in the context of the rest of the program, actually makes a lot
+of sense.</p>
+</blockquote>
+<blockquote>
+<p>My full decode is:</p>
+<pre><code>11101010   01010010  00000011   01011111
+               | |    | || |    || imml = 01
+               | |    | ||-| RdaHi = 001 
+               | |    |-| immh = 000
+               |-| RdaLo = 001
+Hi Reg (arg/dest) = RdaHi : 1 = 0011 = R3
+Lo Reg (arg/dest) = RdaLo : 0 = 0010 = R2
+</code></pre>
+<p>lrsl r2, r3, #1</p>
+<pre><code></code></pre>
+<p>This second decode shows up in the inlined call to _ldiv10, C to follow:</p>
+</blockquote>
+<pre><code class="language-C"><pre style="background-color:#2b303b;">
+<span style="color:#65737e;">/* Division by 10 */
+</span><span style="color:#b48ead;">static void </span><span style="color:#8fa1b3;">_ldiv10</span><span style="color:#c0c5ce;">(uint64_t *</span><span style="color:#bf616a;">v</span><span style="color:#c0c5ce;">)
+</span><span style="color:#c0c5ce;">{
+</span><span style="color:#c0c5ce;">        *v &gt;&gt;= </span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">;
+</span><span style="color:#c0c5ce;">        </span><span style="color:#8fa1b3;">_ldiv5</span><span style="color:#c0c5ce;">(v);
+</span><span style="color:#c0c5ce;">}
+</span></pre>
+</code></pre>
+<p>Note: the above code block is from the notes, but renders poorly when in a
+quoted section, so it's not indented like the rest.</p>
+<blockquote>
+<p>This disassembles to (the add to r6 is part of the inlining, I think):</p>
+<pre><code>10001dda:       4602            mov     r2, r0
+10001ddc:       460b            mov     r3, r1
+10001dde:       ea52 035f       orrs.w  r3, r2, pc, lsr #1
+10001de2:       a80a            add     r0, sp, #40     ; 0x28
+10001de4:       e9cd 230a       strd    r2, r3, [sp, #40]       ; 0x28
+10001de8:       3601            adds    r6, #1
+10001dea:       f00b f9e1       bl      1000d1b0 &lt;_ldiv5&gt;
+</code></pre>
+</blockquote>
+<blockquote>
+<p>Which seems wrong to me.
+However, with my fixed dissasemble, it makes sense:</p>
+<pre><code>10001dda:       4602            mov     r2, r0
+10001ddc:       460b            mov     r3, r1
+10001dde:       ea52 035f       lsrl    r2, r3, #1
+10001de2:       a80a            add     r0, sp, #40     ; 0x28
+10001de4:       e9cd 230a       strd    r2, r3, [sp, #40]       ; 0x28
+10001de8:       3601            adds    r6, #1
+10001dea:       f00b f9e1       bl      1000d1b0 &lt;_ldiv5&gt;
+</code></pre>
+</blockquote>
+<blockquote>
+<p>I have no idea what happened here.</p>
+</blockquote>
+<h2>first example, again</h2>
+<blockquote>
+<p>So I reworked the first example, instructions from bad decode to memory write:</p>
+<pre><code>100019b4 orrs.w  r3, r2, pc, lsl #11
+100019b8 cmp.w   r9, #70 ; 0x46
+100019bc orr.w   r6, r0, r2
+100019c0 orr.w   r1, r3, r0, asr #31
+100019c4 it      eq
+100019c6 moveq.w r9, #102        ; 0x66
+100019ca orrs    r1, r6
+100019cc strd    r2, r3, [sp, #40]       ; 0x28
+</code></pre>
+<p>Eliminating all instructions that don't store to R2 or R3 (the arugemnts to
+the store):</p>
+<pre><code>100019b4 orrs.w  r3, r2, pc, lsl #11
+100019cc strd    r2, r3, [sp, #40]       ; 0x28
+</code></pre>
+<p>Which is most of the instructions.
+R2 and R3 are both 0 before these instructions.
+after the orrs.w with a pc as a source, r3 becomes:</p>
+<pre><code>0xcdc000 = 0x100019b8 &lt;&lt; 11 = $PC &lt;&lt; 11
+</code></pre>
+</blockquote>
+<blockquote>
+<p>So that makes me think it's executed as (incorrectly) written</p>
+</blockquote>
+<blockquote>
+<p>My decode would not have affected the value of R2 or R3</p>
+</blockquote>
+<blockquote>
+<p>Running a simple test of this bug through objdump shows:</p>
+<pre><code>    ; cat incorrect-decode.asm
+main:
+    lsrl r2, r3, #1
+    ; $ZEPHYR_SDK_INSTALL_DIR/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc -x \
+      assembler-with-cpp -mcpu=cortex-m55 -mthumb incorrect-decode.asm  \
+      -o incorrect-decode.o -c
+    ; $ZEPHYR_SDK_INSTALL_DIR/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump \
+      -S incorrect-decode.o
+
+incorrect-decode.o:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 &lt;main&gt;:
+   0:   ea52 035f       orrs.w  r3, r2, pc, lsr #1
+</code></pre>
+</blockquote>
+<blockquote>
+<p>unless you add <code>-m armv8.1-m.main</code>, then it shows the same <code>lsrl</code> as the source
+file.</p>
+</blockquote>
+<h1>Epologue</h1>
+<p>So at this point I figured that it was maybe a bug in the released version of
+qemu and started to test with a version built from master.</p>
+<p>It executed the lsrl correctly. 🤦</p>
+<p>Turns out that was simply a mis-decode of a MVE-specific instruction.
+Further, this was fixed in upstream.</p>
+
+        </main>
+    </body>
+</html>
