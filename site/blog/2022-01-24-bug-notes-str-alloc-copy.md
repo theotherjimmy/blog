@@ -46,7 +46,7 @@ INFO    - Run completed
 error: Recipe `test-run` failed on line 16 with exit code 1
 ```
 
-It seems to have reproduced, though it took 2.5 min :grimace:, so now we setup
+It seems to have reproduced, though it took 2.5 min :grimacing:, so now we setup
 the debugger.
 I also have some automation around this, so it's similarly simple:
 
