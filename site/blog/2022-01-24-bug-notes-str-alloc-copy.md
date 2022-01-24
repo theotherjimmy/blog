@@ -3,7 +3,7 @@ title = "Notes from debugging the Zephyr string copy function"
 description = "Debug notes, again"
 style = "post.css"
 template = "post.html"
-time = "2021-05-05 17:46:42 +0000"
+time = "2022-01-24 10:56:09-06:00"
 ```
 
 Today's bug is described in ussue 40874, and is described as:
