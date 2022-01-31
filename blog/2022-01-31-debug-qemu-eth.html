@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <title>Notes from debugging the an547 Zephyr ethernet failure</title>
+        <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA+Pj4AP+ZmQCZmf8A/zOZACkpKQCZADMA/zaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABVVVVVAAAABTERERNQAABTEVEVETUAAFMVURVRNQAFZTUzM1NWUFZmVVVVVWZlVmRmZmZmRmVWREImYiREZVZEQiIiJEdlVkQmYiZiRGVWZCZiJmJGZQVkImImIkZQBWZCIiIkZlAAVmQiIkZlAAAFVmZmZVAAAAAFVVVQAADwDwAA4AcAAMADAADAAwAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAACAAQAAwAMAAOAHAAD4HwAA" />
+        <meta name="description" content="Etherenet is failing on initialization, this requires debugging TF-M, Zephyr and Qemu at the same time!">
+        <meta property="og:title" content="Notes from debugging the an547 Zephyr ethernet failure" />
+        <meta property="og:description" content="Etherenet is failing on initialization, this requires debugging TF-M, Zephyr and Qemu at the same time!" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:url" content="http://theotherjimmy.github.io/blog/" />
+        <meta property="og:image" content="https://avatars.githubusercontent.com/u/685409?v=4" />
+        <style>
+body {
+    font-family: Serif;
+    font-size: 18px;
+    margin: 0;
+    background-color: #2e3440;
+    color: #d8dee9;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+a:link {
+    color: #81a1c1;
+}
+
+a:visited {
+    color: #b48aed;
+}
+
+a:hover {
+    background-color: #3b4252;
+}
+
+pre {
+    overflow: auto;
+}
+
+main#content {
+    margin: auto;
+    padding-left: 2em;
+    padding-right: 2em;
+    max-width: 60em;
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.navbar li {
+    float: left;
+}
+
+.navbar li a {
+    display: block;
+    text-align: center;
+    padding: 0.5em 0.5em;
+    text-decoration: none;
+}
+
+.flex-break {
+  flex-basis: 100%;
+  height: 0;
+  display: none;
+}
+
+.list-posts .list-title {
+  text-align: center;
+}
+.list-posts .posts-year {
+  margin-top: 70px;
+}
+.list-posts .post-title {
+  margin: 18px 0 0 15px;
+}
+.list-posts a {
+  text-decoration: none;
+}
+.post-title .post-link,
+.post-title .post-date {
+  display: inline-block;
+}
+.post-title .post-link {
+  width: 80%;
+}
+.tags-list .post-tags {
+  margin-top: 50px;
+}
+.tags-list .post-tags .post-tag {
+  margin: 2px 5px;
+  padding: 0;
+}
+.tags-list .post-tags .post-tag a {
+  border-radius: inherit;
+  padding: 0;
+}
+.tags-list .post-tags .post-tag a div {
+  display: inline-block;
+}
+.tags-list .post-tags .post-tag a .tag-name {
+  padding: 5px 8px;
+}
+.tags-list .post-tags .post-tag a .tag-posts-count {
+  background-color: var(--light-secondary-color);
+  border-radius: inherit;
+  color: inherit;
+  opacity: 0.8;
+  padding: 6px;
+  position: relative;
+  z-index: 0;
+}
+.tags-list .post-tags .post-tag:hover a .tag-posts-count {
+  background-color: var(--light-text-color);
+  color: rgb(var(--light-primary-color));
+}
+
+        </style>
+    </head>
+    <body>
+        <header>
+<nav class="navbar" role="navigation"><ul><li><a href="/blog/index.html">Blog</a></li>
+<li style="float:right"><a href="https://github.com/theotherjimmy"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItZ2l0aHViIj48cGF0aCBkPSJNOSAxOWMtNSAxLjUtNS0yLjUtNy0zbTE0IDZ2LTMuODdhMy4zNyAzLjM3IDAgMCAwLS45NC0yLjYxYzMuMTQtLjM1IDYuNDQtMS41NCA2LjQ0LTdBNS40NCA1LjQ0IDAgMCAwIDIwIDQuNzcgNS4wNyA1LjA3IDAgMCAwIDE5LjkxIDFTMTguNzMuNjUgMTYgMi40OGExMy4zOCAxMy4zOCAwIDAgMC03IDBDNi4yNy42NSA1LjA5IDEgNS4wOSAxQTUuMDcgNS4wNyAwIDAgMCA1IDQuNzdhNS40NCA1LjQ0IDAgMCAwLTEuNSAzLjc4YzAgNS40MiAzLjMgNi42MSA2LjQ0IDdBMy4zNyAzLjM3IDAgMCAwIDkgMTguMTNWMjIiPjwvcGF0aD48L3N2Zz4=" /></a></li>
+</nav>
+        </header>
+        <main id="content">
+        <h1>Notes from debugging the an547 Zephyr ethernet failure</h1>
+<p>Since I debugged a PPC fault the other day, and now we don't fault.
+This is great!
+However, now the application, which is supposed to connect over Ethernet
+to a network, simply fails to initialize the network at all.</p>
+<p>I'm going to debug it.</p>
+<h1>Debugger setup</h1>
+<p>The setup will be much the same as last time I debugged the PPC fault.
+This time though, I'll be using my shortened commands.
+This on is simplified to:</p>
+<pre><code class="language-bash"><pre style="background-color:#2b303b;">
+<span style="color:#c0c5ce;">    ; </span><span style="color:#8fa1b3;">j</span><span style="color:#c0c5ce;"> debug
+</span><span style="color:#8fa1b3;">[...lots</span><span style="color:#c0c5ce;"> of build log...]
+</span><span style="color:#8fa1b3;">[348/389]</span><span style="color:#c0c5ce;"> Linking C executable bin/bl2.axf
+</span><span style="color:#8fa1b3;">Memory</span><span style="color:#c0c5ce;"> region         Used Size  Region Size  %</span><span style="color:#bf616a;">age</span><span style="color:#c0c5ce;"> Used
+</span><span style="color:#c0c5ce;">           </span><span style="color:#8fa1b3;">FLASH:</span><span style="color:#c0c5ce;">       21892 B       512 KB      4.18%
+</span><span style="color:#c0c5ce;">             </span><span style="color:#8fa1b3;">RAM:</span><span style="color:#c0c5ce;">       24384 B       512 KB      4.65%
+</span><span style="color:#8fa1b3;">[364/389]</span><span style="color:#c0c5ce;"> Linking C executable bin/tfm_s.axf
+</span><span style="color:#8fa1b3;">Memory</span><span style="color:#c0c5ce;"> region         Used Size  Region Size  %</span><span style="color:#bf616a;">age</span><span style="color:#c0c5ce;"> Used
+</span><span style="color:#c0c5ce;">           </span><span style="color:#8fa1b3;">FLASH:</span><span style="color:#c0c5ce;">      135672 B     389312 B     34.85%
+</span><span style="color:#c0c5ce;">             </span><span style="color:#8fa1b3;">RAM:</span><span style="color:#c0c5ce;">       65392 B       512 KB     12.47%
+</span><span style="color:#c0c5ce;">         </span><span style="color:#8fa1b3;">VENEERS:</span><span style="color:#c0c5ce;">          64 B        832 B      7.69%
+</span><span style="color:#8fa1b3;">[384/389]</span><span style="color:#c0c5ce;"> Linking C executable bin/tfm_ns.axf
+</span><span style="color:#8fa1b3;">Memory</span><span style="color:#c0c5ce;"> region         Used Size  Region Size  %</span><span style="color:#bf616a;">age</span><span style="color:#c0c5ce;"> Used
+</span><span style="color:#c0c5ce;">           </span><span style="color:#8fa1b3;">FLASH:</span><span style="color:#c0c5ce;">       10908 B       381 KB      2.80%
+</span><span style="color:#c0c5ce;">             </span><span style="color:#8fa1b3;">RAM:</span><span style="color:#c0c5ce;">       17600 B         2 MB      0.84%
+</span><span style="color:#8fa1b3;">[389/389]</span><span style="color:#c0c5ce;"> Generating tfm_s_ns_signed.bin
+</span><span style="color:#8fa1b3;">[1/198]</span><span style="color:#c0c5ce;"> Preparing syscall dependency handling
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#8fa1b3;">[186/196]</span><span style="color:#c0c5ce;"> Linking C executable zephyr/zephyr_pre0.elf
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#8fa1b3;">[190/196]</span><span style="color:#c0c5ce;"> Linking C executable zephyr/zephyr_pre1.elf
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#8fa1b3;">[196/196]</span><span style="color:#c0c5ce;"> Linking C executable zephyr/zephyr.elf
+</span><span style="color:#8fa1b3;">Memory</span><span style="color:#c0c5ce;"> region         Used Size  Region Size  %</span><span style="color:#bf616a;">age</span><span style="color:#c0c5ce;"> Used
+</span><span style="color:#c0c5ce;">           </span><span style="color:#8fa1b3;">FLASH:</span><span style="color:#c0c5ce;">       91848 B       384 KB     23.36%
+</span><span style="color:#c0c5ce;">            </span><span style="color:#8fa1b3;">SRAM:</span><span style="color:#c0c5ce;">       31024 B         2 MB      1.48%
+</span><span style="color:#c0c5ce;">        </span><span style="color:#8fa1b3;">IDT_LIST:</span><span style="color:#c0c5ce;">          0 GB         2 KB      0.00%
+</span><span style="color:#8fa1b3;">add</span><span style="color:#c0c5ce;"> symbol table from file &quot;</span><span style="color:#a3be8c;">build/mps3_an547_ns/net/dhcpv4_client/zephyr/zephyr.elf</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#8fa1b3;">add</span><span style="color:#c0c5ce;"> symbol table from file &quot;</span><span style="color:#a3be8c;">build/mps3_an547_ns/net/dhcpv4_client/tfm/bin/tfm_s.elf</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#8fa1b3;">The</span><span style="color:#c0c5ce;"> target architecture is set to &quot;</span><span style="color:#a3be8c;">armv8.1-m.main</span><span style="color:#c0c5ce;">&quot;.
+</span><span style="color:#8fa1b3;">qemu-system-arm:</span><span style="color:#c0c5ce;"> warning: nic lan9118.0 has no peer
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#8fa1b3;">warning:</span><span style="color:#c0c5ce;"> No executable has been specified and target does not support
+</span><span style="color:#8fa1b3;">determining</span><span style="color:#c0c5ce;"> executable automatically.  Try using the &quot;</span><span style="color:#a3be8c;">file</span><span style="color:#c0c5ce;">&quot; command.
+</span><span style="color:#8fa1b3;">Breakpoint</span><span style="color:#c0c5ce;"> 1 at 0x1069d60: eth_init. (2 locations)
+</span><span style="color:#8fa1b3;">Num</span><span style="color:#c0c5ce;">     Type           Disp Enb Address    What
+</span><span style="color:#8fa1b3;">1</span><span style="color:#c0c5ce;">       breakpoint     keep y   &lt;MULTIPLE&gt;
+</span><span style="color:#8fa1b3;">1.1</span><span style="color:#c0c5ce;">                         y   0x01069d60 in eth_init
+</span><span style="color:#c0c5ce;">                                           </span><span style="color:#8fa1b3;">at</span><span style="color:#c0c5ce;"> /home/jimbri01/src/c/zephyr/zephyr/drivers/ethernet/eth_smsc911x.c:663
+</span><span style="color:#8fa1b3;">1.2</span><span style="color:#c0c5ce;">                         y   0x01069d76 in eth_init
+</span><span style="color:#c0c5ce;">                                           </span><span style="color:#8fa1b3;">at</span><span style="color:#c0c5ce;"> /home/jimbri01/src/c/zephyr/zephyr/drivers/ethernet/eth_smsc911x.c:670
+</span><span style="color:#c0c5ce;">(</span><span style="color:#8fa1b3;">gdb</span><span style="color:#c0c5ce;">)
+</span></pre>
+</code></pre>
+<p>This is somewhat less than ideal, as I have to modify the justfile every time
+I change applications that I'm debugging, but that happens infrequently enough
+that it's not a big deal.</p>
+<h1>The rest of the notes</h1>
+<p>Last time, during the PPC fault debugging, I came across two particularly
+useful-looking functions: <code>eth_init</code> and then <code>smsc_init</code>.</p>
+<p>We'll start there.</p>
+<p>Initially it seems that the control flow looks like:</p>
+<ol>
+<li><code>eth_init</code> calls <code>smsc_init</code>, which fails</li>
+<li><code>smsc_init</code> calls <code>smsc_check_id</code>, which fails returning &lt; 0</li>
+<li><code>smsc_check_id</code> fails at it's first check, with id == 0</li>
+</ol>
+<p>So that's what is failing, but why?</p>
+<p>To figure that out, I tried inspecting the code to see what it's accessing.
+It seems to go for the SMSC9220 global variable, which is a preprocessor
+macro and is a typecast of SMSC9220_BASE, which I could not track down in
+less than a minute.
+Instead, I disassembled the function and looked at what the compiler decided
+to access:</p>
+<pre><code>(gdb) disass
+Dump of assembler code for function smsc_init:
+   0x01069c80 &lt;+0&gt;:     movs    r3, #0
+   0x01069c82 &lt;+2&gt;:     push    {r4, r5, lr}
+   0x01069c84 &lt;+4&gt;:     sub     sp, #20
+   0x01069c86 &lt;+6&gt;:     str     r3, [sp, #4]
+=&gt; 0x01069c88 &lt;+8&gt;:     ldr     r3, [pc, #200]  ; (0x1069d54 &lt;smsc_init+212&gt;)
+   0x01069c8a &lt;+10&gt;:    ldr     r2, [r3, #80]   ; 0x50
+   0x01069c8c &lt;+12&gt;:    uxth    r0, r2
+   0x01069c8e &lt;+14&gt;:    cmp.w   r0, r2, lsr #16
+   0x01069c92 &lt;+18&gt;:    mov.w   r1, r2, lsr #16
+</code></pre>
+<p>Ah, so the instruction I'm currently stopped at is the load of a constant.
+I think that this is SMSC9220_BASE, as the second instruction loads with an
+offset of 0x50, which is the ID.
+Let's ask the debugger what that is:</p>
+<pre><code>(gdb) x 0x01069d54
+0x1069d54 &lt;smsc_init+212&gt;:      0x41400000
+</code></pre>
+<p>Huh, I wonder what peripheral that is?
+Let's look it up in the manual.
+It seems to be a part of the Peripheral Expansion interface, matching my
+debugging from the PPC fault earlier.
+Based on the device tree, this corresponds to the eth0 peripheral.
+Let's dump it and get back to the manual.</p>
+<pre><code>(gdb) p *((volatile SMSC9220_TypeDef *)0x41400000)
+$3 = {RX_DATA_PORT = 0, RESERVED1 = {0, 0, 0, 0, 0, 0, 0},
+  TX_DATA_PORT = 0, RESERVED2 = {0, 0, 0, 0, 0, 0, 0}, RX_STAT_PORT = 0,
+  RX_STAT_PEEK = 0, TX_STAT_PORT = 0, TX_STAT_PEEK = 0, ID_REV = 0,
+  IRQ_CFG = 0, INT_STS = 0, INT_EN = 0, RESERVED3 = 0, BYTE_TEST = 0,
+  FIFO_INT = 0, RX_CFG = 0, TX_CFG = 0, HW_CFG = 0, RX_DP_CTRL = 0,
+  RX_FIFO_INF = 0, TX_FIFO_INF = 0, PMT_CTRL = 0, GPIO_CFG = 0,
+  GPT_CFG = 0, GPT_CNT = 0, RESERVED4 = 0, ENDIAN = 0, FREE_RUN = 0,
+  RX_DROP = 0, MAC_CSR_CMD = 0, MAC_CSR_DATA = 0, AFC_CFG = 0,
+  E2P_CMD = 0, E2P_DATA = 0}
+</code></pre>
+<p>So that's all zeros, which, to me, means &quot;read as zero&quot; memory, or a
+disconnected peripheral.</p>
+<p>I should sanity check that we're asking qemu for networking.
+To do this, I'm going to shoot a fly with a bazooka by using bfptrace
+to capture execve arguments and see if we're getting the SMSC9220 
+enabled on the command line:</p>
+<pre><code class="language-bash"><pre style="background-color:#2b303b;">
+<span style="color:#c0c5ce;">    ; </span><span style="color:#8fa1b3;">sudo</span><span style="color:#c0c5ce;"> bpftrace</span><span style="color:#bf616a;"> -e </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">tracepoint:syscalls:sys_enter_execve { join(args-&gt;argv); }</span><span style="color:#c0c5ce;">&#39;  | </span><span style="color:#8fa1b3;">rg</span><span style="color:#c0c5ce;"> qemu
+</span><span style="color:#8fa1b3;">[sudo]</span><span style="color:#c0c5ce;"> password for jimbri01:
+</span><span style="color:#8fa1b3;">/nix/store/2qqjggn75hayr14wxgab106d3j347krn-Zephyr-SDK/sysroots/x86_64-pokysdk-linux/usr/bin/qemu-system-arm 
+</span><span style="color:#c0c5ce;">  </span><span style="color:#8fa1b3;">-cpu</span><span style="color:#c0c5ce;"> cortex-m55 
+</span><span style="color:#c0c5ce;">  </span><span style="color:#8fa1b3;">-machine</span><span style="color:#c0c5ce;"> mps3-an547 
+</span><span style="color:#c0c5ce;">  </span><span style="color:#8fa1b3;">-nographic 
+</span><span style="color:#c0c5ce;">  </span><span style="color:#8fa1b3;">-vga</span><span style="color:#c0c5ce;"> none 
+</span><span style="color:#c0c5ce;">  </span><span style="color:#8fa1b3;">-nic</span><span style="color:#c0c5ce;"> user,model=lan9118, 
+</span><span style="color:#c0c5ce;">  </span><span style="color:#8fa1b3;">-pidfile</span><span style="color:#c0c5ce;"> qemu.pid 
+</span><span style="color:#c0c5ce;">  </span><span style="color:#8fa1b3;">-chardev</span><span style="color:#c0c5ce;"> stdio,id=con,mux=on 
+</span><span style="color:#c0c5ce;">  </span><span style="color:#8fa1b3;">-serial</span><span style="color:#c0c5ce;"> chardev:con
+</span></pre>
+</code></pre>
+<p>So that looks okay, I suppose, though I don't know that <code>lan9118</code> and
+<code>smsc9220</code> are the same thing.
+I wonder what qemu thinks the memory map is?
+Let's check:</p>
+<pre><code>(gdb) monitor info mtree
+address-space: memory
+  0000000000000000-ffffffffffffffff (prio -2, i/o): system
+    0000000001000000-00000000011fffff (prio 0, i/o): tz-mpc-upstream
+    0000000021000000-00000000213fffff (prio 0, ram): sram 2
+    0000000028000000-00000000287fffff (prio 0, i/o): tz-mpc-upstream
+    0000000040080000-0000000040080fff (prio 0, i/o): iotkit-secctl-ns-regs
+    0000000041100000-0000000041100fff (prio 0, i/o): tz-ppc-port[0]
+    0000000041101000-0000000041101fff (prio 0, i/o): tz-ppc-port[1]
+    0000000041102000-0000000041102fff (prio 0, i/o): tz-ppc-port[2]
+    0000000041103000-0000000041103fff (prio 0, i/o): tz-ppc-port[3]
+    0000000041400000-00000000415fffff (prio 0, i/o): tz-ppc-port[4]
+    0000000048007000-0000000048007fff (prio -1000, i/o): FPGA NS PC
+    0000000048102000-0000000048102fff (prio -1000, i/o): U55 timing adapter 0
+    0000000048103000-0000000048103fff (prio -1000, i/o): U55 timing adapter 1
+    0000000049200000-0000000049200fff (prio 0, i/o): tz-ppc-port[0]
+    0000000049201000-0000000049201fff (prio 0, i/o): tz-ppc-port[1]
+    0000000049202000-0000000049202fff (prio 0, i/o): tz-ppc-port[2]
+    0000000049203000-0000000049203fff (prio 0, i/o): tz-ppc-port[3]
+    0000000049204000-0000000049204fff (prio 0, i/o): tz-ppc-port[4]
+    0000000049205000-0000000049205fff (prio 0, i/o): tz-ppc-port[5]
+    0000000049206000-0000000049206fff (prio 0, i/o): tz-ppc-port[6]
+    0000000049208000-0000000049208fff (prio 0, i/o): tz-ppc-port[8]
+    0000000049300000-0000000049300fff (prio 0, i/o): tz-ppc-port[0]
+    0000000049301000-0000000049301fff (prio 0, i/o): tz-ppc-port[1]
+    0000000049302000-0000000049302fff (prio 0, i/o): tz-ppc-port[2]
+    0000000049303000-0000000049303fff (prio 0, i/o): tz-ppc-port[3]
+    0000000049304000-0000000049304fff (prio 0, i/o): tz-ppc-port[4]
+    0000000049305000-0000000049305fff (prio 0, i/o): tz-ppc-port[5]
+    0000000049306000-0000000049306fff (prio 0, i/o): tz-ppc-port[6]
+    0000000049307000-0000000049307fff (prio 0, i/o): tz-ppc-port[7]
+    0000000049308000-0000000049308fff (prio 0, i/o): tz-ppc-port[8]
+    000000004930a000-000000004930afff (prio 0, i/o): tz-ppc-port[10]
+    000000004930b000-000000004930bfff (prio 0, i/o): tz-ppc-port[11]
+    0000000050080000-0000000050080fff (prio 0, i/o): iotkit-secctl-s-regs
+    0000000057000000-0000000057000fff (prio 0, i/o): tz-ppc-port[0]
+    0000000057001000-0000000057001fff (prio 0, i/o): tz-ppc-port[1]
+    0000000057002000-0000000057002fff (prio 0, i/o): tz-ppc-port[2]
+    0000000060000000-00000000dfffffff (prio 0, i/o): tz-mpc-upstream
+...
+address-space: tz-ppc-port[4]
+  0000000000000000-0000000000000fff (prio 0, i/o): pl022
+...
+address-space: tz-ppc-port[4]
+  0000000000000000-0000000000000fff (prio 0, i/o): uart
+...
+address-space: tz-ppc-port[4]
+  0000000000000000-00000000001fffff (prio 0, i/o): mps2-tz-eth-usb-container
+    0000000000000000-00000000000000ff (prio 0, i/o): lan9118-mmio
+    0000000000100000-00000000001fffff (prio 0, i/o): usb-otg
+</code></pre>
+<p>So that's a tad confusing.
+I wonder which one it is.
+At the very least, we can dump the SMSC9220 struct as if it were at the other
+addresses:</p>
+<pre><code>(gdb)  p *((volatile SMSC9220_TypeDef *)0x49204000)
+$2 = {RX_DATA_PORT = 0, RESERVED1 = {0, 0, 0, 0, 0, 0, 0},
+  TX_DATA_PORT = 0, RESERVED2 = {0, 0, 0, 0, 0, 0, 0}, RX_STAT_PORT = 0,
+  RX_STAT_PEEK = 0, TX_STAT_PORT = 0, TX_STAT_PEEK = 0, ID_REV = 0,
+  IRQ_CFG = 0, INT_STS = 0, INT_EN = 0, RESERVED3 = 0, BYTE_TEST = 0,
+  FIFO_INT = 0, RX_CFG = 0, TX_CFG = 0, HW_CFG = 0, RX_DP_CTRL = 0,
+  RX_FIFO_INF = 0, TX_FIFO_INF = 0, PMT_CTRL = 0, GPIO_CFG = 0,
+  GPT_CFG = 0, GPT_CNT = 0, RESERVED4 = 0, ENDIAN = 0, FREE_RUN = 0,
+  RX_DROP = 0, MAC_CSR_CMD = 0, MAC_CSR_DATA = 0, AFC_CFG = 0,
+  E2P_CMD = 0, E2P_DATA = 0}
+(gdb)  p *((volatile SMSC9220_TypeDef *)0x49304000)
+$3 = {RX_DATA_PORT = 0, RESERVED1 = {0, 3, 0, 217, 0, 0, 0},
+  TX_DATA_PORT = 0, RESERVED2 = {0, 0, 0, 0, 0, 0, 0}, RX_STAT_PORT = 0,
+  RX_STAT_PEEK = 0, TX_STAT_PORT = 0, TX_STAT_PEEK = 0, ID_REV = 0,
+  IRQ_CFG = 0, INT_STS = 0, INT_EN = 0, RESERVED3 = 0, BYTE_TEST = 0,
+  FIFO_INT = 0, RX_CFG = 0, TX_CFG = 0, HW_CFG = 0, RX_DP_CTRL = 0,
+  RX_FIFO_INF = 0, TX_FIFO_INF = 0, PMT_CTRL = 0, GPIO_CFG = 0,
+  GPT_CFG = 0, GPT_CNT = 0, RESERVED4 = 0, ENDIAN = 0, FREE_RUN = 0,
+  RX_DROP = 0, MAC_CSR_CMD = 0, MAC_CSR_DATA = 0, AFC_CFG = 0,
+  E2P_CMD = 0, E2P_DATA = 0}
+(gdb)
+</code></pre>
+<p>Hm... also ID == 0 on both of them.
+According to the device tree, they should be i2c_shield 1 and UART 1,
+respectively.</p>
+<p>Let's check with the secure mode alias:</p>
+<pre><code>(gdb)  p *((volatile SMSC9220_TypeDef *)0x59204000)
+$4 = {RX_DATA_PORT = 0, RESERVED1 = {0, 0, 3, 0, 0, 8, 0},
+  TX_DATA_PORT = 0, RESERVED2 = {0, 0, 0, 0, 0, 0, 0}, RX_STAT_PORT = 0,
+  RX_STAT_PEEK = 0, TX_STAT_PORT = 0, TX_STAT_PEEK = 0, ID_REV = 0,
+  IRQ_CFG = 0, INT_STS = 0, INT_EN = 0, RESERVED3 = 0, BYTE_TEST = 0,
+  FIFO_INT = 0, RX_CFG = 0, TX_CFG = 0, HW_CFG = 0, RX_DP_CTRL = 0,
+  RX_FIFO_INF = 0, TX_FIFO_INF = 0, PMT_CTRL = 0, GPIO_CFG = 0,
+  GPT_CFG = 0, GPT_CNT = 0, RESERVED4 = 0, ENDIAN = 0, FREE_RUN = 0,
+  RX_DROP = 0, MAC_CSR_CMD = 0, MAC_CSR_DATA = 0, AFC_CFG = 0,
+  E2P_CMD = 0, E2P_DATA = 0}
+(gdb)  p *((volatile SMSC9220_TypeDef *)0x59304000)
+$5 = {RX_DATA_PORT = 0, RESERVED1 = {0, 0, 0, 0, 0, 0, 0},
+  TX_DATA_PORT = 0, RESERVED2 = {0, 0, 0, 0, 0, 0, 0}, RX_STAT_PORT = 0,
+  RX_STAT_PEEK = 0, TX_STAT_PORT = 0, TX_STAT_PEEK = 0, ID_REV = 0,
+  IRQ_CFG = 0, INT_STS = 0, INT_EN = 0, RESERVED3 = 0, BYTE_TEST = 0,
+  FIFO_INT = 0, RX_CFG = 0, TX_CFG = 0, HW_CFG = 0, RX_DP_CTRL = 0,
+  RX_FIFO_INF = 0, TX_FIFO_INF = 0, PMT_CTRL = 0, GPIO_CFG = 0,
+  GPT_CFG = 0, GPT_CNT = 0, RESERVED4 = 0, ENDIAN = 0, FREE_RUN = 0,
+  RX_DROP = 0, MAC_CSR_CMD = 0, MAC_CSR_DATA = 0, AFC_CFG = 0,
+  E2P_CMD = 0, E2P_DATA = 0}
+(gdb)  p *((volatile SMSC9220_TypeDef *)0x51400000)
+$6 = {RX_DATA_PORT = 0, RESERVED1 = {0, 0, 0, 0, 0, 0, 0},
+  TX_DATA_PORT = 0, RESERVED2 = {0, 0, 0, 0, 0, 0, 0}, RX_STAT_PORT = 0,
+  RX_STAT_PEEK = 0, TX_STAT_PORT = 0, TX_STAT_PEEK = 0,
+  ID_REV = 18350081, IRQ_CFG = 0, INT_STS = 16384, INT_EN = 0,
+  RESERVED3 = 0, BYTE_TEST = 2271560481, FIFO_INT = 1207959552,
+  RX_CFG = 0, TX_CFG = 0, HW_CFG = 327684, RX_DP_CTRL = 0,
+  RX_FIFO_INF = 0, TX_FIFO_INF = 4608, PMT_CTRL = 1, GPIO_CFG = 0,
+  GPT_CFG = 65535, GPT_CNT = 65535, RESERVED4 = 0, ENDIAN = 0,
+  FREE_RUN = 0, RX_DROP = 0, MAC_CSR_CMD = 0, MAC_CSR_DATA = 0,
+  AFC_CFG = 0, E2P_CMD = 256, E2P_DATA = 0}
+</code></pre>
+<p>Hm... Yeah that last one looks good.
+Not only is it the correct address, with a secure-mode alias, but it also
+seems to have an ID.
+So, we probably have to revisit my prior patch that allows access to
+this peripheral.</p>
+<p>It's time to dive into the TF-M code to figure out what's causing the 
+read as zero behavior.
+When I do this, I like to have a monitor dedicated to these notes and the
+manual, and another monitor with the debugger and two editor windows with
+various bits of code that I'm reading open.
+The notes and manual are on a vertical monitor.</p>
+<p>I'm examining the bits of configuration used by using gdb as if it were
+ctags to tell me about types, mostly because it's more convenient than
+setting up a ctags setup that spans mcuboot, tf-m and zephyr.
+For example, I looked up the struct that points to the registers of the
+PPC peripheral expansion block 0 by:</p>
+<pre><code>(gdb) p &amp;PPC_SSE300_PERIPH_EXP0_DATA_S
+$6 = (struct ppc_sse300_dev_data_t *) 0x3000fefc &lt;PPC_SSE300_PERIPH_EXP0_DATA_S&gt;
+(gdb) info types ppc_sse300_dev_data_t
+All types matching regular expression &quot;ppc_sse300_dev_data_t&quot;:
+
+File /home/jimbri01/src/c/zephyr/modules/tee/tf-m/trusted-firmware-m/platform/ext/target/arm/mps3/an547/native_drivers/ppc_sse300_drv.h:
+56:     struct ppc_sse300_dev_data_t;
+</code></pre>
+<p>Which works well enough for this sort of code spelunking.
+This gives me context (code comments) for dump of this struct:</p>
+<pre><code class="language-c"><pre style="background-color:#2b303b;">
+<span style="color:#65737e;">/* SSE-300 PPC device data structure */
+</span><span style="color:#b48ead;">struct </span><span style="color:#c0c5ce;">ppc_sse300_dev_data_t {
+</span><span style="color:#c0c5ce;">    </span><span style="color:#b48ead;">volatile </span><span style="color:#c0c5ce;">uint32_t* sacfg_ns_ppc;   </span><span style="color:#65737e;">/*!&lt; Pointer to non-secure register */
+</span><span style="color:#c0c5ce;">    </span><span style="color:#b48ead;">volatile </span><span style="color:#c0c5ce;">uint32_t* sacfg_sp_ppc;   </span><span style="color:#65737e;">/*!&lt; Pointer to secure unprivileged
+</span><span style="color:#65737e;">                                             register */
+</span><span style="color:#c0c5ce;">    </span><span style="color:#b48ead;">volatile </span><span style="color:#c0c5ce;">uint32_t* nsacfg_nsp_ppc; </span><span style="color:#65737e;">/*!&lt; Pointer to non-secure unprivileged
+</span><span style="color:#65737e;">                                             register */
+</span><span style="color:#c0c5ce;">    uint32_t int_bit_mask;              </span><span style="color:#65737e;">/*!&lt; Interrupt bit mask */
+</span><span style="color:#c0c5ce;">    </span><span style="color:#b48ead;">bool</span><span style="color:#c0c5ce;"> is_initialized;                </span><span style="color:#65737e;">/*!&lt; Indicates if the PPC driver
+</span><span style="color:#65737e;">                                             is initialized */
+</span><span style="color:#c0c5ce;">};
+</span></pre>
+</code></pre>
+<p>and the dump:</p>
+<pre><code>$7 = {sacfg_ns_ppc = 0x50080080, sacfg_sp_ppc = 0x500800c0,
+  nsacfg_nsp_ppc = 0x400800c0, int_bit_mask = 16, is_initialized = true}
+</code></pre>
+<p>My reading of the TRM indicates that the following register configuration
+should allow both secure and non-secure access.
+However, it seems that qemu is emulating this as a read as zero situation:</p>
+<pre><code> (gdb) p *PPC_SSE300_PERIPH_EXP0_DATA_S.sacfg_ns_ppc
+$2 = 1
+(gdb) p *PPC_SSE300_PERIPH_EXP0_DATA_S.sacfg_sp_ppc
+$3 = 1
+(gdb) p *PPC_SSE300_PERIPH_EXP0_DATA_S.nsacfg_nsp_ppc
+$4 = 1
+(gdb)  p *((volatile SMSC9220_TypeDef *)0x51400000)
+$5 = {RX_DATA_PORT = 0, RESERVED1 = {0, 0, 0, 0, 0, 0, 0},
+  TX_DATA_PORT = 0, RESERVED2 = {0, 0, 0, 0, 0, 0, 0}, RX_STAT_PORT = 0,
+  RX_STAT_PEEK = 0, TX_STAT_PORT = 0, TX_STAT_PEEK = 0,
+  ID_REV = 18350081, IRQ_CFG = 0, INT_STS = 16384, INT_EN = 0,
+  RESERVED3 = 0, BYTE_TEST = 2271560481, FIFO_INT = 1207959552,
+  RX_CFG = 0, TX_CFG = 0, HW_CFG = 327684, RX_DP_CTRL = 0,
+  RX_FIFO_INF = 0, TX_FIFO_INF = 4608, PMT_CTRL = 1, GPIO_CFG = 0,
+  GPT_CFG = 65535, GPT_CNT = 65535, RESERVED4 = 0, ENDIAN = 0,
+  FREE_RUN = 1792732, RX_DROP = 0, MAC_CSR_CMD = 0, MAC_CSR_DATA = 0,
+  AFC_CFG = 0, E2P_CMD = 256, E2P_DATA = 0}
+(gdb)  p *((volatile SMSC9220_TypeDef *)0x41400000)
+$6 = {RX_DATA_PORT = 0, RESERVED1 = {0, 0, 0, 0, 0, 0, 0},
+  TX_DATA_PORT = 0, RESERVED2 = {0, 0, 0, 0, 0, 0, 0}, RX_STAT_PORT = 0,
+  RX_STAT_PEEK = 0, TX_STAT_PORT = 0, TX_STAT_PEEK = 0, ID_REV = 0,
+  IRQ_CFG = 0, INT_STS = 0, INT_EN = 0, RESERVED3 = 0, BYTE_TEST = 0,
+  FIFO_INT = 0, RX_CFG = 0, TX_CFG = 0, HW_CFG = 0, RX_DP_CTRL = 0,
+  RX_FIFO_INF = 0, TX_FIFO_INF = 0, PMT_CTRL = 0, GPIO_CFG = 0,
+  GPT_CFG = 0, GPT_CNT = 0, RESERVED4 = 0, ENDIAN = 0, FREE_RUN = 0,
+  RX_DROP = 0, MAC_CSR_CMD = 0, MAC_CSR_DATA = 0, AFC_CFG = 0,
+  E2P_CMD = 0, E2P_DATA = 0}
+</code></pre>
+<p>So it's time to connect to qemu with gdb at the same time as we debug the
+application hosted in qemu.
+This can be a bit confusing, because if the host is stopped, the guests
+debugger is unresponsive.
+It's actually pretty simple to setup.
+With the guest already in the debugger, I open another terminal and run:</p>
+<pre><code class="language-bash"><pre style="background-color:#2b303b;">
+<span style="color:#c0c5ce;">    ; </span><span style="color:#8fa1b3;">gdb</span><span style="color:#bf616a;"> -p </span><span style="color:#c0c5ce;">$(</span><span style="color:#8fa1b3;">pgrep</span><span style="color:#c0c5ce;"> qemu)
+</span><span style="color:#8fa1b3;">Attaching</span><span style="color:#c0c5ce;"> to process 1317407
+</span><span style="color:#8fa1b3;">[New</span><span style="color:#c0c5ce;"> LWP 1317408]
+</span><span style="color:#8fa1b3;">[New</span><span style="color:#c0c5ce;"> LWP 1317409]
+</span><span style="color:#8fa1b3;">[Thread</span><span style="color:#c0c5ce;"> debugging using libthread_db enabled]
+</span><span style="color:#8fa1b3;">Using</span><span style="color:#c0c5ce;"> host libthread_db library &quot;</span><span style="color:#a3be8c;">/nix/store/563528481rvhc5kxwipjmg6rqrl95mdx-glibc-2.33-56/lib/libthread_db.so.1</span><span style="color:#c0c5ce;">&quot;.
+</span><span style="color:#8fa1b3;">0x00007f5f516fd482</span><span style="color:#c0c5ce;"> in ppoll () </span><span style="color:#8fa1b3;">from</span><span style="color:#c0c5ce;"> /nix/store/mij848h2x5wiqkwhg027byvmf9x3gx7y-glibc-2.33-50/lib/libc.so.6
+</span><span style="color:#8fa1b3;">warning:</span><span style="color:#c0c5ce;"> File &quot;</span><span style="color:#a3be8c;">/nix/store/7fv9v6mnlkb4ddf9kz1snknbvbfbcbx0-gcc-10.3.0-lib/lib/libstdc++.so.6.0.28-gdb.py</span><span style="color:#c0c5ce;">&quot; auto-loading has been declined by your `</span><span style="color:#8fa1b3;">auto-load</span><span style="color:#c0c5ce;"> safe-path&#39;</span><span style="color:#a3be8c;"> set to &quot;$debugdir:$datadir/auto-load:/nix/store/2nkjrh3za68vrw6kf8lxn6nq1dval05v-gcc-10.3.0-lib&quot;.
+</span><span style="color:#a3be8c;">To enable execution of this file add
+</span><span style="color:#a3be8c;">        add-auto-load-safe-path /nix/store/7fv9v6mnlkb4ddf9kz1snknbvbfbcbx0-gcc-10.3.0-lib/lib/libstdc++.so.6.0.28-gdb.py
+</span><span style="color:#a3be8c;">line to your configuration file &quot;/home/jimbri01/.config/gdb/gdbinit&quot;.
+</span><span style="color:#a3be8c;">To completely disable this security protection add
+</span><span style="color:#a3be8c;">        set auto-load safe-path /
+</span><span style="color:#a3be8c;">line to your configuration file &quot;/home/jimbri01/.config/gdb/gdbinit&quot;.
+</span><span style="color:#a3be8c;">For more information about this security protection see the
+</span><span style="color:#a3be8c;">&quot;Auto-loading safe path&quot; section in the GDB manual.  E.g., run from the shell:
+</span><span style="color:#a3be8c;">        info &quot;(gdb)Auto-loading safe path&quot;
+</span><span style="color:#a3be8c;">(gdb)
+</span></pre>
+</code></pre>
+<p>Now I have to be sure that this debugger is running it's target before I
+interact with the guest debugger at all.</p>
+<p>As a baseline, I've put a breakpoint in the <code>lan9118_readh</code> and
+<code>lan9118_readw</code> functions and I've dumped the secure-mode address of the
+peripheral in gdb.</p>
+<p>Amusingly, guest gdb gets an error during the dump, but host gdb hits the
+<code>lan9118_readl</code> breakpoint.
+I tried reading from the non-secure address and, well no breakpoint is hit
+in host gdb.
+So we know that qemu does not try to read from the LAN9118 when reading
+from the non-secure address.
+Time to find the point in qemu where it handles the alias and put a
+breakpoint there.</p>
+<p>The appropriate function is <code>tz_ppc_read</code>, which handles reads that are 
+behind a Peripheral Protection Controller (PPC).
+The relevant bits of the function:</p>
+<pre><code class="language-c"><pre style="background-color:#2b303b;">
+<span style="color:#b48ead;">static</span><span style="color:#c0c5ce;"> MemTxResult </span><span style="color:#8fa1b3;">tz_ppc_read</span><span style="color:#c0c5ce;">(</span><span style="color:#b48ead;">void </span><span style="color:#c0c5ce;">*</span><span style="color:#bf616a;">opaque</span><span style="color:#c0c5ce;">, hwaddr </span><span style="color:#bf616a;">addr</span><span style="color:#c0c5ce;">, uint64_t *</span><span style="color:#bf616a;">pdata</span><span style="color:#c0c5ce;">,
+</span><span style="color:#c0c5ce;">                               </span><span style="color:#b48ead;">unsigned </span><span style="color:#bf616a;">size</span><span style="color:#c0c5ce;">, MemTxAttrs </span><span style="color:#bf616a;">attrs</span><span style="color:#c0c5ce;">)
+</span><span style="color:#c0c5ce;">{
+</span><span style="color:#c0c5ce;">    TZPPCPort *p = opaque;
+</span><span style="color:#c0c5ce;">    TZPPC *s = p-&gt;ppc;
+</span><span style="color:#c0c5ce;">    </span><span style="color:#b48ead;">int</span><span style="color:#c0c5ce;"> n = p - s-&gt;port;
+</span><span style="color:#c0c5ce;">    AddressSpace *as = &amp;p-&gt;downstream_as;
+</span><span style="color:#c0c5ce;">    uint64_t data;
+</span><span style="color:#c0c5ce;">    MemTxResult res;
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#c0c5ce;">    </span><span style="color:#b48ead;">if </span><span style="color:#c0c5ce;">(!</span><span style="color:#8fa1b3;">tz_ppc_check</span><span style="color:#c0c5ce;">(s, n, attrs)) {
+</span><span style="color:#c0c5ce;">        </span><span style="color:#8fa1b3;">trace_tz_ppc_read_blocked</span><span style="color:#c0c5ce;">(n, addr, attrs.</span><span style="color:#bf616a;">secure</span><span style="color:#c0c5ce;">, attrs.</span><span style="color:#bf616a;">user</span><span style="color:#c0c5ce;">);
+</span><span style="color:#c0c5ce;">        </span><span style="color:#b48ead;">if </span><span style="color:#c0c5ce;">(s-&gt;cfg_sec_resp) {
+</span><span style="color:#c0c5ce;">            </span><span style="color:#b48ead;">return</span><span style="color:#c0c5ce;"> MEMTX_ERROR;
+</span><span style="color:#c0c5ce;">        } </span><span style="color:#b48ead;">else </span><span style="color:#c0c5ce;">{
+</span><span style="color:#c0c5ce;">            *pdata = </span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">;
+</span><span style="color:#c0c5ce;">            </span><span style="color:#b48ead;">return</span><span style="color:#c0c5ce;"> MEMTX_OK;
+</span><span style="color:#c0c5ce;">        }
+</span><span style="color:#c0c5ce;">    }
+</span><span style="color:#c0c5ce;">    
+</span></pre>
+</code></pre>
+<p>and when I access it from the NS-address:</p>
+<pre><code class="language-c"><pre style="background-color:#2b303b;">
+<span style="color:#c0c5ce;">Thread </span><span style="color:#d08770;">1 </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">qemu-system-arm</span><span style="color:#c0c5ce;">&quot; hit Breakpoint </span><span style="color:#d08770;">3</span><span style="color:#c0c5ce;">, </span><span style="color:#8fa1b3;">tz_ppc_read </span><span style="color:#c0c5ce;">(opaque=</span><span style="color:#d08770;">0x7f5f50c76640</span><span style="color:#c0c5ce;">, addr=</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">, pdata=</span><span style="color:#d08770;">0x7ffe6ecdc848</span><span style="color:#c0c5ce;">, size=</span><span style="color:#d08770;">4</span><span style="color:#c0c5ce;">, attrs=...) at </span><span style="background-color:#bf616a;color:#2b303b;">..</span><span style="color:#c0c5ce;">/hw/misc/tz-ppc.</span><span style="color:#bf616a;">c</span><span style="color:#c0c5ce;">:</span><span style="color:#d08770;">107
+</span><span style="color:#d08770;">107     </span><span style="color:#c0c5ce;">{
+</span><span style="color:#c0c5ce;">(gdb) n
+</span><span style="color:#d08770;">110         </span><span style="color:#b48ead;">int</span><span style="color:#c0c5ce;"> n = p - s-&gt;port;
+</span><span style="color:#c0c5ce;">(gdb)
+</span><span style="color:#d08770;">115         </span><span style="color:#b48ead;">if </span><span style="color:#c0c5ce;">(!</span><span style="color:#8fa1b3;">tz_ppc_check</span><span style="color:#c0c5ce;">(s, n, attrs)) {
+</span><span style="color:#c0c5ce;">(gdb)
+</span><span style="color:#d08770;">116             </span><span style="color:#8fa1b3;">trace_tz_ppc_read_blocked</span><span style="color:#c0c5ce;">(n, addr, attrs.</span><span style="color:#bf616a;">secure</span><span style="color:#c0c5ce;">, attrs.</span><span style="color:#bf616a;">user</span><span style="color:#c0c5ce;">);
+</span><span style="color:#c0c5ce;">(gdb)
+</span><span style="color:#d08770;">117             </span><span style="color:#b48ead;">if </span><span style="color:#c0c5ce;">(s-&gt;cfg_sec_resp) {
+</span><span style="color:#c0c5ce;">(gdb)
+</span><span style="color:#d08770;">120                 </span><span style="color:#c0c5ce;">*pdata = </span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">;
+</span><span style="color:#c0c5ce;">(gdb)
+</span><span style="color:#d08770;">121                 </span><span style="color:#b48ead;">return</span><span style="color:#c0c5ce;"> MEMTX_OK;
+</span><span style="color:#c0c5ce;">(gdb)
+</span></pre>
+</code></pre>
+<p>So it really is read-as-zero here, intentionally.
+I'll re-run the gdb print and step into the <code>tz_ppc_check</code> function.</p>
+<p>I stepped into <code>tz_ppc_check</code> and tested all of the conditionals that
+determine if a read is denied.
+It seems that the register <code>cfg_ap</code> is not setup correctly and reads as all
+zero:</p>
+<pre><code>(gdb) p s-&gt;cfg_ap
+$8 = {false &lt;repeats 16 times&gt;}
+(gdb) p s-&gt;cfg_ap[n]
+$9 = false
+</code></pre>
+<p>Since there's a <code>tz_ppc_cfg_ap</code> function in the same file, I'm going to put
+a breakpoint there.</p>
+<p>Huh, so we're not configuring <code>cfg_ap[4]</code>, and it defaults to zero.
+We should inspect the TF-M code to see exactly how it's writing to the
+PPC registers.
+It really feels like we're reverse engineering an understanding of the PPC
+and the TF-M code that drives it.</p>
+<p>It seems like the writes to <code>sacfg_ns_ppc</code> trigger the <code>tz_ppc_cfg_ap</code>
+breakpoints, implying that those writes control if the non-secure state
+has access to a peripheral, or it reads as zeros.</p>
+<p>Strangely, it seems that level (the argument to <code>tz_ppc_cfg_ap</code>) is zero
+even when the mask in TF-M (the local variable that enables a given
+peripheral) is non-zero.
+Tracing through the code, it looks like the <code>ppc-&gt;ns</code> register muxes
+between the <code>ppc-&gt;nsp</code> and <code>ppc-&gt;sp</code> registers, and the <code>mask</code> writes
+to the <code>ppc-&gt;ns</code> register.
+I wonder what writes to the two registers it muxes.</p>
+<p>So I hit the breakpoint in qemu, and decided to hit C-c in the guest
+debugger.</p>
+<p>Tracing through the code, it's looking like I need to setup the peripheral
+PPC EXP0 with <code>(1 &lt;&lt; 4)</code>, because that's what accessing the LAN9118 peripheral
+generates.</p>
+<p>This might work, but qemu seems to ignore all bits above bit 2.
+It seems that this is because the ports after port index 2 are null:</p>
+<pre><code class="language-c"><pre style="background-color:#2b303b;">
+<span style="color:#c0c5ce;">(gdb) p ppc-&gt;numports
+</span><span style="color:#c0c5ce;">$</span><span style="color:#d08770;">7 </span><span style="color:#c0c5ce;">= </span><span style="color:#d08770;">16
+</span><span style="color:#c0c5ce;">(gdb) l
+</span><span style="color:#d08770;">266
+</span><span style="color:#d08770;">267     </span><span style="color:#b48ead;">static void </span><span style="color:#8fa1b3;">iotkit_secctl_update_ppc_ap</span><span style="color:#c0c5ce;">(IoTKitSecCtlPPC *ppc)
+</span><span style="color:#d08770;">268     </span><span style="color:#c0c5ce;">{
+</span><span style="color:#d08770;">269         </span><span style="color:#b48ead;">int</span><span style="color:#c0c5ce;"> i;
+</span><span style="color:#d08770;">270
+</span><span style="color:#d08770;">271         </span><span style="color:#b48ead;">for </span><span style="color:#c0c5ce;">(i = </span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">; i &lt; ppc-&gt;numports; i++) {
+</span><span style="color:#d08770;">272             </span><span style="color:#b48ead;">bool</span><span style="color:#c0c5ce;"> v;
+</span><span style="color:#d08770;">273
+</span><span style="color:#d08770;">274             </span><span style="color:#b48ead;">if </span><span style="color:#c0c5ce;">(</span><span style="color:#8fa1b3;">extract32</span><span style="color:#c0c5ce;">(ppc-&gt;ns, i, </span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">)) {
+</span><span style="color:#d08770;">275</span><span style="color:#c0c5ce;">                 v = </span><span style="color:#8fa1b3;">extract32</span><span style="color:#c0c5ce;">(ppc-&gt;nsp, i, </span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">);
+</span><span style="color:#c0c5ce;">(gdb)
+</span><span style="color:#d08770;">276             </span><span style="color:#c0c5ce;">} </span><span style="color:#b48ead;">else </span><span style="color:#c0c5ce;">{
+</span><span style="color:#d08770;">277</span><span style="color:#c0c5ce;">                 v = </span><span style="color:#8fa1b3;">extract32</span><span style="color:#c0c5ce;">(ppc-&gt;sp, i, </span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">);
+</span><span style="color:#d08770;">278             </span><span style="color:#c0c5ce;">}
+</span><span style="color:#d08770;">279             </span><span style="color:#8fa1b3;">qemu_set_irq</span><span style="color:#c0c5ce;">(ppc-&gt;ap[i], v);
+</span><span style="color:#d08770;">280         </span><span style="color:#c0c5ce;">}
+</span><span style="color:#d08770;">281     </span><span style="color:#c0c5ce;">}
+</span><span style="color:#d08770;">282
+</span><span style="color:#d08770;">283     </span><span style="color:#b48ead;">static void </span><span style="color:#8fa1b3;">iotkit_secctl_ppc_ns_write</span><span style="color:#c0c5ce;">(IoTKitSecCtlPPC *ppc, uint32_t value)
+</span><span style="color:#d08770;">284     </span><span style="color:#c0c5ce;">{
+</span><span style="color:#d08770;">285         </span><span style="color:#b48ead;">int</span><span style="color:#c0c5ce;"> i;
+</span><span style="color:#c0c5ce;">(gdb) p ppc-&gt;ap
+</span><span style="color:#c0c5ce;">$</span><span style="color:#d08770;">8 </span><span style="color:#c0c5ce;">= {</span><span style="color:#d08770;">0x5567c93b63e0</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x5567c93b5f70</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x5567c93b5f20</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x0 </span><span style="color:#c0c5ce;">&lt;repeats </span><span style="color:#d08770;">13</span><span style="color:#c0c5ce;"> times&gt;}
+</span></pre>
+</code></pre>
+<p>That's troublesome, I need to access port 4.</p>
+<p>Let's put a breakpoint in the initialization and step through it to see
+what's going going on there.
+Well, it's not triggered by a <code>monitor system_reset</code> command, so we're going
+to have to startup qemu while it's being debugged by gdb.
+I wrote another gdb-script in my justfile for this purpose:</p>
+<pre><code>debug-qemu: (an547 debug-sample extra-config)
+    #!/usr/bin/env -S gdb {{qemu-bin}} -q -x 
+    break main
+    run {{qemu-flags}} {{qemu-stdio}}
+</code></pre>
+<p>Debugging the startup led me nowhere.
+Instead, I stepped back through the code and looked through the device
+specific initialization code.
+I found something interesting:</p>
+<pre><code class="language-c"><pre style="background-color:#2b303b;">
+<span style="color:#c0c5ce;">    </span><span style="color:#b48ead;">const</span><span style="color:#c0c5ce;"> PPCInfo an547_ppcs[] = { {
+</span><span style="color:#c0c5ce;">            .</span><span style="color:#bf616a;">name </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">apb_ppcexp0</span><span style="color:#c0c5ce;">&quot;,
+</span><span style="color:#c0c5ce;">            .</span><span style="color:#bf616a;">ports </span><span style="color:#c0c5ce;">= {
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">ssram-mpc</span><span style="color:#c0c5ce;">&quot;, make_mpc, &amp;mms-&gt;mpc[</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x57000000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">qspi-mpc</span><span style="color:#c0c5ce;">&quot;, make_mpc, &amp;mms-&gt;mpc[</span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x57001000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">ddr-mpc</span><span style="color:#c0c5ce;">&quot;, make_mpc, &amp;mms-&gt;mpc[</span><span style="color:#d08770;">2</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x57002000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">            },
+</span><span style="color:#c0c5ce;">        }, {
+</span><span style="color:#c0c5ce;">            .</span><span style="color:#bf616a;">name </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">apb_ppcexp1</span><span style="color:#c0c5ce;">&quot;,
+</span><span style="color:#c0c5ce;">            .</span><span style="color:#bf616a;">ports </span><span style="color:#c0c5ce;">= {
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">i2c0</span><span style="color:#c0c5ce;">&quot;, make_i2c, &amp;mms-&gt;i2c[</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49200000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, {},
+</span><span style="color:#c0c5ce;">                  { .</span><span style="color:#bf616a;">i2c_internal </span><span style="color:#c0c5ce;">= </span><span style="color:#d08770;">true </span><span style="color:#65737e;">/* touchscreen */ </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">i2c1</span><span style="color:#c0c5ce;">&quot;, make_i2c, &amp;mms-&gt;i2c[</span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49201000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, {},
+</span><span style="color:#c0c5ce;">                  { .</span><span style="color:#bf616a;">i2c_internal </span><span style="color:#c0c5ce;">= </span><span style="color:#d08770;">true </span><span style="color:#65737e;">/* audio conf */ </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">spi0</span><span style="color:#c0c5ce;">&quot;, make_spi, &amp;mms-&gt;spi[</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49202000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">53 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">spi1</span><span style="color:#c0c5ce;">&quot;, make_spi, &amp;mms-&gt;spi[</span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49203000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">54 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">spi2</span><span style="color:#c0c5ce;">&quot;, make_spi, &amp;mms-&gt;spi[</span><span style="color:#d08770;">2</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49204000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">55 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">i2c2</span><span style="color:#c0c5ce;">&quot;, make_i2c, &amp;mms-&gt;i2c[</span><span style="color:#d08770;">2</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49205000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, {},
+</span><span style="color:#c0c5ce;">                  { .</span><span style="color:#bf616a;">i2c_internal </span><span style="color:#c0c5ce;">= </span><span style="color:#d08770;">false </span><span style="color:#65737e;">/* shield 0 */ </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">i2c3</span><span style="color:#c0c5ce;">&quot;, make_i2c, &amp;mms-&gt;i2c[</span><span style="color:#d08770;">3</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49206000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, {},
+</span><span style="color:#c0c5ce;">                  { .</span><span style="color:#bf616a;">i2c_internal </span><span style="color:#c0c5ce;">= </span><span style="color:#d08770;">false </span><span style="color:#65737e;">/* shield 1 */ </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { </span><span style="color:#65737e;">/* port 7 reserved */ </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">i2c4</span><span style="color:#c0c5ce;">&quot;, make_i2c, &amp;mms-&gt;i2c[</span><span style="color:#d08770;">4</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49208000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, {},
+</span><span style="color:#c0c5ce;">                  { .</span><span style="color:#bf616a;">i2c_internal </span><span style="color:#c0c5ce;">= </span><span style="color:#d08770;">true </span><span style="color:#65737e;">/* DDR4 EEPROM */ </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">            },
+</span><span style="color:#c0c5ce;">        }, {
+</span><span style="color:#c0c5ce;">            .</span><span style="color:#bf616a;">name </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">apb_ppcexp2</span><span style="color:#c0c5ce;">&quot;,
+</span><span style="color:#c0c5ce;">            .</span><span style="color:#bf616a;">ports </span><span style="color:#c0c5ce;">= {
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">scc</span><span style="color:#c0c5ce;">&quot;, make_scc, &amp;mms-&gt;scc, </span><span style="color:#d08770;">0x49300000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">i2s-audio</span><span style="color:#c0c5ce;">&quot;, make_unimp_dev, &amp;mms-&gt;i2s_audio, </span><span style="color:#d08770;">0x49301000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">fpgaio</span><span style="color:#c0c5ce;">&quot;, make_fpgaio, &amp;mms-&gt;fpgaio, </span><span style="color:#d08770;">0x49302000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">uart0</span><span style="color:#c0c5ce;">&quot;, make_uart, &amp;mms-&gt;uart[</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49303000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">33</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">34</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">43 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">uart1</span><span style="color:#c0c5ce;">&quot;, make_uart, &amp;mms-&gt;uart[</span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49304000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">35</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">36</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">44 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">uart2</span><span style="color:#c0c5ce;">&quot;, make_uart, &amp;mms-&gt;uart[</span><span style="color:#d08770;">2</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49305000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">37</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">38</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">45 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">uart3</span><span style="color:#c0c5ce;">&quot;, make_uart, &amp;mms-&gt;uart[</span><span style="color:#d08770;">3</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49306000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">39</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">40</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">46 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">uart4</span><span style="color:#c0c5ce;">&quot;, make_uart, &amp;mms-&gt;uart[</span><span style="color:#d08770;">4</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49307000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">41</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">42</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">47 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">uart5</span><span style="color:#c0c5ce;">&quot;, make_uart, &amp;mms-&gt;uart[</span><span style="color:#d08770;">5</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x49308000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">125</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">126</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">127 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#c0c5ce;">                { </span><span style="color:#65737e;">/* port 9 reserved */ </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">clcd</span><span style="color:#c0c5ce;">&quot;, make_unimp_dev, &amp;mms-&gt;cldc, </span><span style="color:#d08770;">0x4930a000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">rtc</span><span style="color:#c0c5ce;">&quot;, make_rtc, &amp;mms-&gt;rtc, </span><span style="color:#d08770;">0x4930b000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">            },
+</span><span style="color:#c0c5ce;">        }, {
+</span><span style="color:#c0c5ce;">            .</span><span style="color:#bf616a;">name </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">ahb_ppcexp0</span><span style="color:#c0c5ce;">&quot;,
+</span><span style="color:#c0c5ce;">            .</span><span style="color:#bf616a;">ports </span><span style="color:#c0c5ce;">= {
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">gpio0</span><span style="color:#c0c5ce;">&quot;, make_unimp_dev, &amp;mms-&gt;gpio[</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x41100000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">gpio1</span><span style="color:#c0c5ce;">&quot;, make_unimp_dev, &amp;mms-&gt;gpio[</span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x41101000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">gpio2</span><span style="color:#c0c5ce;">&quot;, make_unimp_dev, &amp;mms-&gt;gpio[</span><span style="color:#d08770;">2</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x41102000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">gpio3</span><span style="color:#c0c5ce;">&quot;, make_unimp_dev, &amp;mms-&gt;gpio[</span><span style="color:#d08770;">3</span><span style="color:#c0c5ce;">], </span><span style="color:#d08770;">0x41103000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x1000 </span><span style="color:#c0c5ce;">},
+</span><span style="color:#c0c5ce;">                { &quot;</span><span style="color:#a3be8c;">eth-usb</span><span style="color:#c0c5ce;">&quot;, make_eth_usb, </span><span style="color:#d08770;">NULL</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x41400000</span><span style="color:#c0c5ce;">, </span><span style="color:#d08770;">0x200000</span><span style="color:#c0c5ce;">, { </span><span style="color:#d08770;">49 </span><span style="color:#c0c5ce;">} },
+</span><span style="color:#c0c5ce;">            },
+</span><span style="color:#c0c5ce;">        },
+</span><span style="color:#c0c5ce;">    };
+</span></pre>
+</code></pre>
+<p>The part I found interesting is that there are 3 aps in the registers
+and it must be the first one.
+However, the peripherals we're accessing are on the last one.
+That seems incorrect.</p>
+<p>I switched them, rebuilt qemu and re-ran the test.
+No more SMSC911x failed to initialize messages!</p>
+<p>The patch I applied is:</p>
+<pre><code class="language-diff"><pre style="background-color:#2b303b;">
+<span style="color:#c0c5ce;">From bc9fe9c5bf6a3b90c96480e38f93a7eaba723905 Mon Sep 17 00:00:00 2001
+</span><span style="color:#c0c5ce;">From: Jimmy Brisson &lt;jimmy.brisson@linaro.org&gt;
+</span><span style="color:#c0c5ce;">Date: Mon, 31 Jan 2022 14:21:16 -0600
+</span><span style="color:#c0c5ce;">Subject: [PATCH] an547: Correct typo that swaps ahb and apb peripherals
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#c0c5ce;">Turns out that this manifests in being unable to configure
+</span><span style="color:#c0c5ce;">the ethernet access permissions, as the IotKitPPC looks
+</span><span style="color:#c0c5ce;">these up by name.
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#c0c5ce;">With this fix, eth is configurable
+</span><span style="background-color:#4f5b66;color:#c0c5ce;">---
+</span><span style="color:#c0c5ce;"> hw/arm/mps2-tz.c | 4 ++--
+</span><span style="color:#c0c5ce;"> 1 file changed, 2 insertions(+), 2 deletions(-)
+</span><span style="color:#c0c5ce;">
+</span><span style="color:#c0c5ce;">diff --git a/hw/arm/mps2-tz.c b/hw/arm/mps2-tz.c
+</span><span style="color:#c0c5ce;">index f40e854dec..3c6456762a 100644
+</span><span style="color:#c0c5ce;">--- a/hw/arm/mps2-tz.c
+</span><span style="color:#c0c5ce;">+++ b/hw/arm/mps2-tz.c
+</span><span style="color:#c0c5ce;">@@ -1030,7 +1030,7 @@ static void mps2tz_common_init(MachineState *machine)
+</span><span style="color:#c0c5ce;">     };
+</span><span style="color:#c0c5ce;"> 
+</span><span style="color:#c0c5ce;">     const PPCInfo an547_ppcs[] = { {
+</span><span style="color:#bf616a;">-            .name = &quot;apb_ppcexp0&quot;,
+</span><span style="color:#a3be8c;">+            .name = &quot;ahb_ppcexp0&quot;,
+</span><span style="color:#c0c5ce;">             .ports = {
+</span><span style="color:#c0c5ce;">                 { &quot;ssram-mpc&quot;, make_mpc, &amp;mms-&gt;mpc[0], 0x57000000, 0x1000 },
+</span><span style="color:#c0c5ce;">                 { &quot;qspi-mpc&quot;, make_mpc, &amp;mms-&gt;mpc[1], 0x57001000, 0x1000 },
+</span><span style="color:#c0c5ce;">@@ -1072,7 +1072,7 @@ static void mps2tz_common_init(MachineState *machine)
+</span><span style="color:#c0c5ce;">                 { &quot;rtc&quot;, make_rtc, &amp;mms-&gt;rtc, 0x4930b000, 0x1000 },
+</span><span style="color:#c0c5ce;">             },
+</span><span style="color:#c0c5ce;">         }, {
+</span><span style="color:#bf616a;">-            .name = &quot;ahb_ppcexp0&quot;,
+</span><span style="color:#a3be8c;">+            .name = &quot;apb_ppcexp0&quot;,
+</span><span style="color:#c0c5ce;">             .ports = {
+</span><span style="color:#c0c5ce;">                 { &quot;gpio0&quot;, make_unimp_dev, &amp;mms-&gt;gpio[0], 0x41100000, 0x1000 },
+</span><span style="color:#c0c5ce;">                 { &quot;gpio1&quot;, make_unimp_dev, &amp;mms-&gt;gpio[1], 0x41101000, 0x1000 },
+</span><span style="color:#bf616a;">-- 
+</span><span style="color:#c0c5ce;">2.33.1
+</span></pre>
+</code></pre>
+<p>Unlike last time, this is not fixed on master!
+Further, it was probably a typo, and it feels like that was a lot of work
+to fix a typo.</p>
+
+        </main>
+    </body>
+</html>
